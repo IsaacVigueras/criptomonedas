@@ -1,117 +1,86 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  SafeAreaView,
+  ActivityIndicator,
+  Image,
   ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
-  useColorScheme,
   View,
 } from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+import Header from './components/Header';
+import Form from './components/Form';
+import {CurrencytType} from './interfaces';
+import {API} from './services';
+import {Pricemultifull} from './interfaces/Pricemultifull';
+import Quotation from './components/Quotation';
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [currency, setCurrency] = useState<CurrencytType>(CurrencytType.EMPTY);
+  const [cryptocurrency, setCryptoCurrency] = useState<string>('');
+  const [isValid, setIsValid] = useState<boolean>(false);
+  const [data, setData] = useState<Pricemultifull>();
+  const [load, setLoad] = useState<boolean>(false);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  useEffect(() => {
+    if (isValid) {
+      getApi();
+      setLoad(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isValid]);
+
+  const getApi = async () => {
+    const response = await API(
+      `/pricemultifull?fsyms=BTC,ETH&tsyms=${cryptocurrency}&tsym=${currency}`,
+    );
+
+    setTimeout(() => {
+      setLoad(false);
+      setIsValid(false);
+      setData(response.data.DISPLAY.BTC);
+    }, 3000);
   };
 
+  if (load) {
+    return (
+      <View style={styles.containLoader}>
+        <ActivityIndicator size="large" color="#5E49E2" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <ScrollView>
+      <Header />
+      <Image
+        style={styles.img}
+        source={require('./assets/img/cryptomonedas.png')}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <View style={styles.container}>
+        <Form
+          cryptocurrency={cryptocurrency}
+          currency={currency}
+          setCryptoCurrency={setCryptoCurrency}
+          setCurrency={setCurrency}
+          setIsValid={setIsValid}
+        />
+      </View>
+      <Quotation data={data?.[`${cryptocurrency}`]} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  img: {
+    width: '100%',
+    height: 150,
+    marginHorizontal: '2.5%',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  container: {
+    marginHorizontal: '2.5%',
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  containLoader: {
+    flex: 1,
+    justifyContent: 'center',
   },
 });
 
